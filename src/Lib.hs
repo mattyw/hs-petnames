@@ -5,11 +5,13 @@ module Lib
     , names
     , adverbs
     , adjectives
+    , randomNumbers
     ) where
 
 import System.Random
 --import Control.Monad.State.Lazy
 
+-- Look into monad random
 -- Would be nice if I could chain calls together.
 -- would return a list of random elements from the list
 --randomChain :: RandomGen g => g -> [a] -> State g [a]
@@ -31,6 +33,10 @@ randomIdx g ls = ls !! idx
 randomIdx' :: RandomGen g => g -> [a] -> (a, g)
 randomIdx' g ls = (ls !! idx, g')
     where (idx, g') = randomR (0, length ls) g
+
+randomNumbers :: RandomGen g => g -> (a, a) -> [a]
+randomNumbers g lohi = item : (randomNumbers g' lohi)
+    where (item, g') = randomR g lohi
 
 rand :: [a] -> a
 rand ls = randomIdx (mkStdGen 5) ls
