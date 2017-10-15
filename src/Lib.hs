@@ -2,6 +2,7 @@ module Lib
     ( generate
     , rand
     , rand'
+    , rand''
     , names
     , adverbs
     , adjectives
@@ -34,9 +35,12 @@ randomIdx' :: RandomGen g => g -> [a] -> (a, g)
 randomIdx' g ls = (ls !! idx, g')
     where (idx, g') = randomR (0, length ls) g
 
-randomNumbers :: RandomGen g => g -> (a, a) -> [a]
+randomNumbers :: RandomGen g => g -> (Int, Int) -> [Int]
 randomNumbers g lohi = item : (randomNumbers g' lohi)
-    where (item, g') = randomR g lohi
+    where (item, g') = randomR lohi g
+
+rand'' :: Int -> (Int,Int) -> [Int]
+rand'' seed lohi = randomNumbers (mkStdGen seed) lohi
 
 rand :: [a] -> a
 rand ls = randomIdx (mkStdGen 5) ls
