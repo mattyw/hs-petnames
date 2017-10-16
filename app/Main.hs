@@ -3,6 +3,7 @@ module Main where
 import Lib
 import Options.Applicative
 import Data.Semigroup ((<>))
+import System.Random
 
 data Opts = Opts
     { words :: Int
@@ -49,7 +50,9 @@ options = Opts
 
 run :: Opts -> IO ()
 run (Opts w l s c u) = do
-    putStrLn $ generate w s
+    g <- getStdGen
+    let (name, _) = generate g w s
+    putStrLn name
 
 main :: IO ()
 main = run =<< execParser opts
