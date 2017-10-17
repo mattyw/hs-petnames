@@ -1,5 +1,6 @@
 module Lib
     ( generate
+    , lengthFilter
     ) where
 
 import System.Random
@@ -27,21 +28,25 @@ randomIdx g ls = (ls !! idx, g')
 rand :: RandomGen g => g -> [a] -> (a, g)
 rand g ls = randomIdx g ls
 
-generate :: RandomGen g => g -> Int -> String -> (String, g)
-generate g 0 _ = ("", g)
-generate g 1 _ = rand g names
-generate g 2 sep = (adj ++ sep ++ name, g'')
+generate :: RandomGen g => g -> Int -> String -> ([String] -> [String]) -> (String, g)
+generate g 0 _ _ = ("", g)
+generate g 1 _ f = rand g $ f names
+generate g 2 sep f = (adj ++ sep ++ name, g'')
     where
-        (adj, g') = rand g adjectives
-        (name, g'') = rand g' names
-generate g n sep = gen g n sep
+        (adj, g') = rand g $ f adjectives
+        (name, g'') = rand g' $ f names
+generate g n sep f = gen g n sep f
 
-gen :: RandomGen g => g -> Int -> String -> (String, g)
-gen g 2 sep = (adj ++ sep ++ name, g'')
+gen :: RandomGen g => g -> Int -> String -> ([String] -> [String]) -> (String, g)
+gen g 2 sep f = (adj ++ sep ++ name, g'')
     where
-        (adj, g') = rand g adjectives
-        (name, g'') = rand g' names
-gen g n sep = (adv ++ sep ++ t, g'')
+        (adj, g') = rand g $ f adjectives
+        (name, g'') = rand g' $ f names
+gen g n sep f = (adv ++ sep ++ t, g'')
     where
-        (adv, g') = rand g adverbs
-        (t, g'') = gen g' (n-1) sep
+        (adv, g') = rand g $ f adverbs
+        (t, g'') = gen g' (n-1) sep f
+
+lengthFilter :: Int -> [String] -> [String]
+lengthFilter 0 xs = xs
+lengthFilter limit xs = filter (\x -> length x <= limit) xs

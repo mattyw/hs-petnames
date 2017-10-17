@@ -51,7 +51,7 @@ options = Opts
 run :: Opts -> IO ()
 run (Opts w l s c u) = do
     g <- getStdGen
-    let (name, _) = generate g w s
+    let (name, _) = generate g w s (Lib.lengthFilter l)
     putStrLn name
 
 main :: IO ()
