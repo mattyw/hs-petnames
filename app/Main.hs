@@ -49,9 +49,13 @@ options = Opts
         <> help "generate ubuntu-style names, alliteration of first character of each word" )
 
 run :: Opts -> IO ()
-run (Opts w l s c u) = do
+run (Opts w l s c False) = do
     g <- getStdGen
     let (name, _) = generate g w s (Lib.lengthFilter l)
+    putStrLn name
+run (Opts w l s c True) = do
+    g <- getStdGen
+    let (name, _) = Lib.ubuntu g s (Lib.lengthFilter l)
     putStrLn name
 
 main :: IO ()
