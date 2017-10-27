@@ -1,18 +1,9 @@
 module Lib
     ( generate
     , lengthFilter
-    , ubuntu
-    , allNames
     , firstLetterFilter
-    , randomIdx
-    , adjectives
-    , adverbs
-    , names
-    , randomName
-    , randomAdverb
-    , randomAdjective
-    , test
-    , newGen
+    , ubuntu
+    , randomChar
     ) where
 
 import System.Random
@@ -25,76 +16,41 @@ names      = ["ox", "ant", "ape", "asp", "bat", "bee", "boa", "bug", "cat", "cod
 
 type RandomReturn a = (a, StdGen)
 
+type FilterF = ([String] -> [String])
+
 -- from https://bartoszmilewski.com/2014/12/23/kleisli-categories/
 m1 >=> m2 = \g ->
     let (b, g') = m1 g
         (c, g'') = m2 g'
     in (b++c, g'')
 
-rand':: RandomGen g => [a] -> g -> (a, g)
-rand' [] g = error "rand empty list"
-rand' ls g = randomIdx g ls
-
-randomName :: RandomGen g => g -> (String, g)
-randomName = rand' names
-
-randomAdverb :: RandomGen g => g -> (String, g)
-randomAdverb = rand' adverbs
-
-randomAdjective :: RandomGen g => g -> (String, g)
-randomAdjective = rand' adjectives
-
--- sep is implemented just to confirm to the above interface
-sep :: RandomGen g => String -> g -> (String, g)
-sep str g = (str, g)
-
-newGen :: RandomGen g => Int -> String -> g -> (String, g)
-newGen 0 _ = sep ""
-newGen 1 _ = randomName
-newGen 2 s = randomAdjective >=> sep s >=> randomName
-newGen n s = randomAdverb >=> sep s >=> newGen (n-1) s
-
-test :: RandomGen g => g -> (String, g)
-test = randomName >=> sep ":" >=> randomAdverb
-
--- Rewrite based on composition above here
-
-
-randomIdx :: RandomGen g => g -> [a] -> (a, g)
-randomIdx g [] = error "empty list"
-randomIdx g ls = (ls !! idx, g')
+randomIdx :: RandomGen g => [a] -> g -> (a, g)
+randomIdx [] _ = error "empty list"
+randomIdx ls g = (ls !! idx, g') --TODO using fish
     where (idx, g') = randomR (0, length ls) g
 
-rand :: RandomGen g => g -> [a] -> (a, g)
-rand g [] = error "rand empty list"
-rand g ls = randomIdx g ls
+rand :: RandomGen g => [a] -> g -> (a, g)
+rand [] g = error "rand empty list"
+rand ls g = randomIdx ls g --TODO point free
 
-allNames :: RandomGen g => g -> String -> [String]
-allNames g sep =  shuffle' randomZip (length randomZip) g
-    where
-        randomNames = shuffle' names (length names) g 
-        randomAdv = shuffle' adverbs (length adverbs) g 
-        randomAdj = shuffle' adjectives (length adjectives) g 
-        randomZip = zipWith3 (\a b c -> a ++ sep ++ b ++ sep ++ c) randomAdv randomAdj randomNames
+generate :: RandomGen g => Int -> String -> FilterF -> g -> (String, g)
+generate 0 _ f = sep ""
+generate 1 _ f = randomName f
+generate 2 s f = randomAdjective f >=> sep s >=> randomName f
+generate n s f = randomAdverb f >=> sep s >=> generate (n-1) s f
 
-generate :: RandomGen g => g -> Int -> String -> ([String] -> [String]) -> (String, g)
-generate g 0 _ _ = ("", g)
-generate g 1 _ f = rand g $ f names
-generate g 2 sep f = (adj ++ sep ++ name, g'')
-    where
-        (adj, g') = rand g $ f adjectives
-        (name, g'') = rand g' $ f names
-generate g n sep f = gen g n sep f
+randomName :: RandomGen g => FilterF -> g -> (String, g)
+randomName f = rand $ f names
 
-gen :: RandomGen g => g -> Int -> String -> ([String] -> [String]) -> (String, g)
-gen g 2 sep f = (adj ++ sep ++ name, g'')
-    where
-        (adj, g') = rand g $ f adjectives
-        (name, g'') = rand g' $ f names
-gen g n sep f = (adv ++ sep ++ t, g'')
-    where
-        (adv, g') = rand g $ f adverbs
-        (t, g'') = gen g' (n-1) sep f
+randomAdverb :: RandomGen g => FilterF -> g -> (String, g)
+randomAdverb f = rand $ f adverbs
+
+randomAdjective :: RandomGen g => FilterF -> g -> (String, g)
+randomAdjective f = rand $ f adjectives
+
+-- sep is implemented just to conform to the above interface
+sep :: RandomGen g => String -> g -> (String, g)
+sep str g = (str, g)
 
 lengthFilter :: Int -> [String] -> [String]
 lengthFilter 0 xs = xs
@@ -103,7 +59,8 @@ lengthFilter limit xs = filter (\x -> length x <= limit) xs
 firstLetterFilter :: Char -> [String] -> [String]
 firstLetterFilter c ls = filter (\x -> c == head x) ls
 
-ubuntu :: RandomGen g => g -> String -> ([String] -> [String]) -> (String, g)
-ubuntu g sep fltr = generate g' 2 sep (firstLetterFilter letter)
-    where
-        (letter, g') = randomIdx g "abcdefghijklmnopqrstuvwxyz"
+randomChar :: RandomGen g => g -> (Char, g)
+randomChar = randomIdx "abcdefghijklmnopqrstuvwxyz"
+
+ubuntu :: RandomGen g => String -> FilterF -> Char -> g -> (String, g)
+ubuntu s filtr letter = generate 2 s (filtr . (firstLetterFilter letter))

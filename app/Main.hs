@@ -51,11 +51,12 @@ options = Opts
 run :: Opts -> IO ()
 run (Opts w l s c False) = do
     g <- getStdGen
-    let (name, _) = generate g w s (Lib.lengthFilter l)
+    let (name, _) = generate w s (Lib.lengthFilter l) g
     putStrLn name
 run (Opts w l s c True) = do
     g <- getStdGen
-    let (name, _) = Lib.ubuntu g s (Lib.lengthFilter l)
+    let (firstLetter, g') = Lib.randomChar g
+    let (name, _) = Lib.ubuntu s (Lib.lengthFilter l) firstLetter g'
     putStrLn name
 
 main :: IO ()
