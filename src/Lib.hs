@@ -24,14 +24,10 @@ m1 >=> m2 = \g ->
         (c, g'') = m2 g'
     in (b++c, g'')
 
-randomIdx :: RandomGen g => [a] -> g -> (a, g)
-randomIdx [] _ = error "empty list"
-randomIdx ls g = (ls !! idx, g') --TODO using fish
-    where (idx, g') = randomR (0, length ls) g
-
 rand :: RandomGen g => [a] -> g -> (a, g)
-rand [] g = error "rand empty list"
-rand ls g = randomIdx ls g --TODO point free
+rand ls g = (x,g)
+    where
+        x = head $ shuffle' ls (length ls) g
 
 generate :: RandomGen g => Int -> String -> FilterF -> g -> (String, g)
 generate 0 _ f = sep ""
@@ -60,7 +56,7 @@ firstLetterFilter :: Char -> [String] -> [String]
 firstLetterFilter c ls = filter (\x -> c == head x) ls
 
 randomChar :: RandomGen g => g -> (Char, g)
-randomChar = randomIdx "abcdefghijklmnopqrstuvwxyz"
+randomChar = rand "abcdefghijklmnopqrstuvwxyz"
 
 ubuntu :: RandomGen g => String -> FilterF -> Char -> g -> (String, g)
 ubuntu s filtr letter = generate 2 s (filtr . (firstLetterFilter letter))
